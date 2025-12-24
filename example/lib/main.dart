@@ -36,7 +36,7 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text('Japan MapsDemo'),
       ),
-      body: GeoMapWidget(
+      body: JapanMapsWidget(
         center: LatLng(latitude: 35.6895, longitude: 139.6917),
       ),
     );

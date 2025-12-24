@@ -4,16 +4,16 @@ import 'package:japan_maps/src/model/lat_lng.dart';
 import 'package:flutter/services.dart';
 import 'package:japan_maps/src/model/normalized_map.dart';
 
-class GeoMapWidget extends StatefulWidget {
+class JapanMapsWidget extends StatefulWidget {
   final LatLng center; // raw lat/lon
 
-  const GeoMapWidget({super.key, required this.center});
+  const JapanMapsWidget({super.key, required this.center});
 
   @override
-  State<GeoMapWidget> createState() => _GeoMapWidgetState();
+  State<JapanMapsWidget> createState() => _JapanMapsWidgetState();
 }
 
-class _GeoMapWidgetState extends State<GeoMapWidget> {
+class _JapanMapsWidgetState extends State<JapanMapsWidget> {
   NormalizedMapData? _mapData;
   LatLng? _centerN;
 
