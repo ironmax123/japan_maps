@@ -1,13 +1,21 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:japan_maps/src/format/mercator_projection.dart';
 import 'package:japan_maps/src/model/lat_lng.dart';
+import 'package:japan_maps/src/model/map_bounds.dart';
+import 'package:japan_maps/src/model/normalized_map.dart';
 
 /// GeoJSON 全体を地図用ポリゴン群に変換
-List<List<LatLng>> geoJsonToMap(String geoJsonString) {
-  final Map<String, dynamic> geo = jsonDecode(geoJsonString);
 
-  final List<List<LatLng>> polygons = [];
+NormalizedMapData geoJsonToMercatorMap(String geoJsonString) {
+  final Map<String, dynamic> geo = jsonDecode(geoJsonString);
+  final List<List<Point<double>>> projected = [];
+
+  double minX = double.infinity;
+  double maxX = -double.infinity;
+  double minY = double.infinity;
+  double maxY = -double.infinity;
 
   for (final feature in geo['features']) {
     final geometry = feature['geometry'];
@@ -15,60 +23,74 @@ List<List<LatLng>> geoJsonToMap(String geoJsonString) {
     final coords = geometry['coordinates'];
 
     if (type == 'Polygon') {
-      polygons.addAll(_parsePolygon(coords));
+      _parsePolygon(coords, projected, (x, y) {
+        minX = min(minX, x);
+        maxX = max(maxX, x);
+        minY = min(minY, y);
+        maxY = max(maxY, y);
+      });
     } else if (type == 'MultiPolygon') {
-      for (final polygon in coords) {
-        polygons.addAll(_parsePolygon(polygon));
+      for (final poly in coords) {
+        _parsePolygon(poly, projected, (x, y) {
+          minX = min(minX, x);
+          maxX = max(maxX, x);
+          minY = min(minY, y);
+          maxY = max(maxY, y);
+        });
       }
     }
   }
 
-  return _normalize(polygons);
-}
+  final dx = maxX - minX;
+  final dy = maxY - minY;
 
-/// Polygon パース
-List<List<LatLng>> _parsePolygon(List polygonCoords) {
-  final List<List<LatLng>> result = [];
-
-  for (final ring in polygonCoords) {
-    final List<LatLng> path = [];
-
-    for (final point in ring) {
-      final lon = point[0].toDouble();
-      final lat = point[1].toDouble();
-      path.add(LatLng(latitude: lat, longitude: lon));
-    }
-
-    result.add(path);
-  }
-
-  return result;
-}
-
-///正規化（地図座標化）
-List<List<LatLng>> _normalize(List<List<LatLng>> polygons) {
-  double minLat = double.infinity;
-  double maxLat = -double.infinity;
-  double minLon = double.infinity;
-  double maxLon = -double.infinity;
-
-  for (final poly in polygons) {
-    for (final p in poly) {
-      minLat = min(minLat, p.latitude);
-      maxLat = max(maxLat, p.latitude);
-      minLon = min(minLon, p.longitude);
-      maxLon = max(maxLon, p.longitude);
-    }
-  }
-
-  final latRange = maxLat - minLat;
-  final lonRange = maxLon - minLon;
-
-  return polygons.map((poly) {
+  final normalized = projected.map((poly) {
     return poly.map((p) {
-      final x = ((p.longitude - minLon) / lonRange) * 2 - 1;
-      final y = -(((p.latitude - minLat) / latRange) * 2 - 1);
-      return LatLng(latitude: y, longitude: x);
+      final nx = ((p.x - minX) / dx) * 2 - 1;
+      final ny = -(((p.y - minY) / dy) * 2 - 1);
+      return LatLng(latitude: ny, longitude: nx);
     }).toList();
   }).toList();
+
+  return NormalizedMapData(
+    polygons: normalized,
+    bounds: MapBounds(minX: minX, maxX: maxX, minY: minY, maxY: maxY),
+  );
+}
+
+void _parsePolygon(
+  List polygonCoords,
+  List<List<Point<double>>> out,
+  void Function(double x, double y) onPoint,
+) {
+  for (final ring in polygonCoords) {
+    final List<Point<double>> path = [];
+
+    for (final coord in ring) {
+      final lon = coord[0].toDouble();
+      final lat = coord[1].toDouble();
+
+      final x = MercatorProjection.projectX(lon);
+      final y = MercatorProjection.projectY(lat);
+
+      onPoint(x, y);
+      path.add(Point(x, y));
+    }
+
+    out.add(path);
+  }
+}
+
+/// raw lat/lon center -> normalized (-1..1) center
+LatLng normalizeCenter(LatLng rawCenter, NormalizedMapData map) {
+  final px = MercatorProjection.projectX(rawCenter.longitude);
+  final py = MercatorProjection.projectY(rawCenter.latitude);
+
+  final dx = map.bounds.maxX - map.bounds.minX;
+  final dy = map.bounds.maxY - map.bounds.minY;
+
+  final nx = ((px - map.bounds.minX) / dx) * 2 - 1;
+  final ny = -(((py - map.bounds.minY) / dy) * 2 - 1);
+
+  return LatLng(latitude: ny, longitude: nx);
 }
