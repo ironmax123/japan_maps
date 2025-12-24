@@ -1,8 +1,10 @@
 import 'package:flutter/widgets.dart';
 
 class JapanMapsController extends ChangeNotifier {
-  double _scale = 50.0;
+  double _scale;
   Offset _offset = Offset.zero;
+
+  JapanMapsController({required double zoomLevel}) : _scale = zoomLevel;
 
   double get scale => _scale;
   Offset get offset => _offset;

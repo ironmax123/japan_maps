@@ -8,8 +8,14 @@ import 'package:japan_maps/src/map/map_controller.dart';
 class JapanMapsWidget extends StatefulWidget {
   final LatLng center; // raw lat/lon
   final JapanMapsController? controller;
+  final double initialZoomLevel;
 
-  const JapanMapsWidget({super.key, required this.center, this.controller});
+  const JapanMapsWidget({
+    super.key,
+    required this.center,
+    this.controller,
+    this.initialZoomLevel = 50.0,
+  });
 
   @override
   State<JapanMapsWidget> createState() => _JapanMapsWidgetState();
@@ -32,7 +38,7 @@ class _JapanMapsWidgetState extends State<JapanMapsWidget> {
     if (widget.controller != null) {
       _controller = widget.controller!;
     } else {
-      _controller = JapanMapsController();
+      _controller = JapanMapsController(zoomLevel: widget.initialZoomLevel);
       _isInternalController = true;
     }
     _controller.addListener(_onControllerChange);
@@ -53,7 +59,7 @@ class _JapanMapsWidgetState extends State<JapanMapsWidget> {
         _controller = widget.controller!;
         _isInternalController = false;
       } else {
-        _controller = JapanMapsController();
+        _controller = JapanMapsController(zoomLevel: widget.initialZoomLevel);
         _isInternalController = true;
       }
       _controller.addListener(_onControllerChange);

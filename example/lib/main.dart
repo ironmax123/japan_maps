@@ -36,8 +36,140 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text('Japan MapsDemo'),
       ),
+      body: Column(
+        children: [
+          ElevatedButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const _MapWidget()),
+            ),
+            child: const Text('Normal Map'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const _MapColorWidget()),
+            ),
+            child: const Text('Color Map'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const _MapColorPrefectureWidget(),
+              ),
+            ),
+            child: const Text('Color Map Prefecture'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MapColorWidget extends StatelessWidget {
+  const _MapColorWidget();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Color Map')),
       body: JapanColorMapsWidget(
         center: LatLng(latitude: 35.6895, longitude: 139.6917),
+        mapColor: Colors.greenAccent.withAlpha(128),
+
+        /// optional
+        // initialZoomLevel: 500.0,
+        /// default is 50.0
+      ),
+    );
+  }
+}
+
+class _MapColorPrefectureWidget extends StatelessWidget {
+  const _MapColorPrefectureWidget();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Color Map')),
+      body: JapanColorMapsWidget(
+        center: LatLng(latitude: 35.6895, longitude: 139.6917),
+        mapColor: Colors.blueAccent.withAlpha(128),
+
+        /// optional
+        /// prefecture color
+        prefecture: Prefecture(
+          hokkaido: Colors.red,
+          aomori: Colors.green,
+          iwate: Colors.blue,
+          miyagi: Colors.yellow,
+          akita: Colors.orange,
+          yamagata: Colors.purple,
+          fukushima: Colors.brown,
+          ibaraki: Colors.pink,
+          tochigi: Colors.cyan,
+          gunma: Colors.teal,
+          saitama: Colors.lime,
+          chiba: Colors.indigo,
+          tokyo: Colors.amber,
+          kanagawa: Colors.deepPurple,
+          niigata: Colors.deepOrange,
+          toyama: Colors.lightBlue,
+          ishikawa: Colors.lightGreen,
+          fukui: Colors.redAccent,
+          yamanashi: Colors.blueAccent,
+          nagano: Colors.greenAccent,
+          gifu: Colors.yellowAccent,
+          shizuoka: Colors.orangeAccent,
+          aichi: Colors.purpleAccent,
+          mie: Colors.pinkAccent,
+          shiga: Colors.cyanAccent,
+          kyoto: Colors.tealAccent,
+          osaka: Colors.limeAccent,
+          hyogo: Colors.indigoAccent,
+          nara: Colors.amberAccent,
+          wakayama: Colors.deepPurpleAccent,
+          tottori: Colors.lightBlueAccent,
+          shimane: Colors.lightGreenAccent,
+          okayama: Colors.red.withAlpha(128),
+          hiroshima: Colors.green.withAlpha(128),
+          yamaguchi: Colors.blue.withAlpha(128),
+          tokushima: Colors.yellow.withAlpha(128),
+          kagawa: Colors.orange.withAlpha(128),
+          ehime: Colors.purple.withAlpha(128),
+          kochi: Colors.brown.withAlpha(128),
+          fukuoka: Colors.pink.withAlpha(128),
+          saga: Colors.cyan.withAlpha(128),
+          nagasaki: Colors.teal.withAlpha(128),
+          kumamoto: Colors.lime.withAlpha(128),
+          oita: Colors.indigo.withAlpha(128),
+          miyazaki: Colors.amber.withAlpha(128),
+          kagoshima: Colors.deepPurple.withAlpha(128),
+          okinawa: Colors.deepOrange.withAlpha(128),
+        ),
+
+        /// optional
+        // initialZoomLevel: 500.0,
+        /// default is 50.0
+      ),
+    );
+  }
+}
+
+class _MapWidget extends StatelessWidget {
+  const _MapWidget();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('normal map')),
+      body: JapanMapsWidget(
+        center: LatLng(latitude: 35.6895, longitude: 139.6917),
+
+        /// optional
+        /// default is 50.0
+        initialZoomLevel: 500.0,
       ),
     );
   }

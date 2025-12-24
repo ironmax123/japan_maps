@@ -1,15 +1,22 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
+import 'package:japan_maps/japan_maps.dart';
 import 'package:japan_maps/src/format/geo_map.dart';
-import 'package:japan_maps/src/model/lat_lng.dart';
 import 'package:japan_maps/src/model/normalized_map.dart';
-import 'package:japan_maps/src/map/map_controller.dart';
-import 'package:japan_maps/src/widget/map.dart';
 
 class JapanColorMapsWidget extends StatefulWidget {
   final LatLng center; // raw lat/lon
+  final double initialZoomLevel;
+  final Prefecture? prefecture;
+  final Color mapColor;
 
-  const JapanColorMapsWidget({super.key, required this.center});
+  const JapanColorMapsWidget({
+    super.key,
+    required this.center,
+    required this.mapColor,
+    this.initialZoomLevel = 50.0,
+    this.prefecture,
+  });
 
   @override
   State<JapanColorMapsWidget> createState() => _JapanColorMapsWidgetState();
@@ -23,7 +30,7 @@ class _JapanColorMapsWidgetState extends State<JapanColorMapsWidget> {
   @override
   void initState() {
     super.initState();
-    _controller = JapanMapsController();
+    _controller = JapanMapsController(zoomLevel: widget.initialZoomLevel);
     _controller.addListener(_onControllerChange);
     _loadGeoJson();
   }
@@ -67,10 +74,12 @@ class _JapanColorMapsWidgetState extends State<JapanColorMapsWidget> {
           child: CustomPaint(
             size: Size.infinite,
             painter: _JapanColorPainter(
+              mapColor: widget.mapColor,
               polygons: _mapData!.polygons,
               centerN: _centerN!,
               scale: _controller.scale,
               offset: _controller.offset,
+              prefecture: widget.prefecture,
             ),
           ),
         ),
@@ -84,21 +93,22 @@ class _JapanColorPainter extends CustomPainter {
   final LatLng centerN;
   final double scale;
   final Offset offset;
+  final Color mapColor;
+
+  final Prefecture? prefecture;
 
   _JapanColorPainter({
     required this.polygons,
     required this.centerN,
     required this.scale,
     required this.offset,
+    required this.mapColor,
+    this.prefecture,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final colorPaint = Paint()
-      ..style = PaintingStyle.fill
-      ..color = const Color(
-        0xFFFF0000,
-      ).withOpacity(0.5); // Example color for Japan
+    final basePaint = Paint()..style = PaintingStyle.fill;
 
     final baseScale = size.shortestSide / 2;
     final totalScale = baseScale * scale;
@@ -111,6 +121,15 @@ class _JapanColorPainter extends CustomPainter {
       if (poly.properties['nam_ja'] == null) continue;
 
       if (poly.points.isEmpty) continue;
+
+      final id = poly.properties['id'];
+      Color color = mapColor;
+
+      if (prefecture != null && id is int) {
+        color = _getColor(prefecture!, id) ?? mapColor;
+      }
+
+      basePaint.color = color;
 
       final path = Path();
       for (int i = 0; i < poly.points.length; i++) {
@@ -126,7 +145,108 @@ class _JapanColorPainter extends CustomPainter {
         }
       }
       path.close();
-      canvas.drawPath(path, colorPaint);
+      canvas.drawPath(path, basePaint);
+    }
+  }
+
+  Color? _getColor(Prefecture p, int id) {
+    switch (id) {
+      case 1:
+        return p.hokkaido;
+      case 2:
+        return p.aomori;
+      case 3:
+        return p.iwate;
+      case 4:
+        return p.miyagi;
+      case 5:
+        return p.akita;
+      case 6:
+        return p.yamagata;
+      case 7:
+        return p.fukushima;
+      case 8:
+        return p.ibaraki;
+      case 9:
+        return p.tochigi;
+      case 10:
+        return p.gunma;
+      case 11:
+        return p.saitama;
+      case 12:
+        return p.chiba;
+      case 13:
+        return p.tokyo;
+      case 14:
+        return p.kanagawa;
+      case 15:
+        return p.niigata;
+      case 16:
+        return p.toyama;
+      case 17:
+        return p.ishikawa;
+      case 18:
+        return p.fukui;
+      case 19:
+        return p.yamanashi;
+      case 20:
+        return p.nagano;
+      case 21:
+        return p.gifu;
+      case 22:
+        return p.shizuoka;
+      case 23:
+        return p.aichi;
+      case 24:
+        return p.mie;
+      case 25:
+        return p.shiga;
+      case 26:
+        return p.kyoto;
+      case 27:
+        return p.osaka;
+      case 28:
+        return p.hyogo;
+      case 29:
+        return p.nara;
+      case 30:
+        return p.wakayama;
+      case 31:
+        return p.tottori;
+      case 32:
+        return p.shimane;
+      case 33:
+        return p.okayama;
+      case 34:
+        return p.hiroshima;
+      case 35:
+        return p.yamaguchi;
+      case 36:
+        return p.tokushima;
+      case 37:
+        return p.kagawa;
+      case 38:
+        return p.ehime;
+      case 39:
+        return p.kochi;
+      case 40:
+        return p.fukuoka;
+      case 41:
+        return p.saga;
+      case 42:
+        return p.nagasaki;
+      case 43:
+        return p.kumamoto;
+      case 44:
+        return p.oita;
+      case 45:
+        return p.miyazaki;
+      case 46:
+        return p.kagoshima;
+      case 47:
+        return p.okinawa;
+      default:
+        return null;
     }
   }
 
@@ -135,6 +255,9 @@ class _JapanColorPainter extends CustomPainter {
     return old.scale != scale ||
         old.offset != offset ||
         old.centerN != centerN ||
-        old.polygons != polygons;
+        old.polygons != polygons ||
+        old.mapColor != mapColor ||
+        old.prefecture !=
+            prefecture; // Assuming Prefecture checks equality correctly or re-creates
   }
 }
