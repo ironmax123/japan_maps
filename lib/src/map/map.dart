@@ -67,7 +67,7 @@ class _GeoMapWidgetState extends State<GeoMapWidget> {
           },
           onScaleUpdate: (d) {
             setState(() {
-              _scale = (_startScale * d.scale).clamp(0.5, 20.0);
+              _scale = (_startScale * d.scale).clamp(0.5, 10000.0);
               _offset = _startOffset + (d.focalPoint - _startFocal);
             });
           },
