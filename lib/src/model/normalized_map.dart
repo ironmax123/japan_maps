@@ -14,8 +14,15 @@ class NormalizedMap {
   });
 }
 
+class MapPolygon {
+  final List<LatLng> points;
+  final Map<String, dynamic> properties;
+
+  const MapPolygon({required this.points, this.properties = const {}});
+}
+
 class NormalizedMapData {
-  final List<List<LatLng>> polygons;
+  final List<MapPolygon> polygons;
   final MapBounds bounds;
 
   const NormalizedMapData({required this.polygons, required this.bounds});

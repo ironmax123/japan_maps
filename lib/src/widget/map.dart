@@ -3,11 +3,13 @@ import 'package:japan_maps/src/format/geo_map.dart';
 import 'package:japan_maps/src/model/lat_lng.dart';
 import 'package:flutter/services.dart';
 import 'package:japan_maps/src/model/normalized_map.dart';
+import 'package:japan_maps/src/map/map_controller.dart';
 
 class JapanMapsWidget extends StatefulWidget {
   final LatLng center; // raw lat/lon
+  final JapanMapsController? controller;
 
-  const JapanMapsWidget({super.key, required this.center});
+  const JapanMapsWidget({super.key, required this.center, this.controller});
 
   @override
   State<JapanMapsWidget> createState() => _JapanMapsWidgetState();
@@ -17,17 +19,58 @@ class _JapanMapsWidgetState extends State<JapanMapsWidget> {
   NormalizedMapData? _mapData;
   LatLng? _centerN;
 
-  double _scale = 50.0;
-  Offset _offset = Offset.zero;
+  late JapanMapsController _controller;
+  bool _isInternalController = false;
 
-  double _startScale = 50.0;
+  double _startScale = 1.0;
   Offset _startOffset = Offset.zero;
   Offset _startFocal = Offset.zero;
 
   @override
   void initState() {
     super.initState();
+    if (widget.controller != null) {
+      _controller = widget.controller!;
+    } else {
+      _controller = JapanMapsController();
+      _isInternalController = true;
+    }
+    _controller.addListener(_onControllerChange);
     _loadGeoJson();
+  }
+
+  @override
+  void didUpdateWidget(covariant JapanMapsWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.controller != oldWidget.controller) {
+      _controller.removeListener(_onControllerChange);
+      if (_isInternalController) {
+        // We don't dispose internal controller here because we might want to keep state?
+        // Usually if switching to external, we just drop internal.
+      }
+
+      if (widget.controller != null) {
+        _controller = widget.controller!;
+        _isInternalController = false;
+      } else {
+        _controller = JapanMapsController();
+        _isInternalController = true;
+      }
+      _controller.addListener(_onControllerChange);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_onControllerChange);
+    if (_isInternalController) {
+      _controller.dispose();
+    }
+    super.dispose();
+  }
+
+  void _onControllerChange() {
+    setState(() {});
   }
 
   Future<void> _loadGeoJson() async {
@@ -42,7 +85,9 @@ class _JapanMapsWidgetState extends State<JapanMapsWidget> {
     setState(() {
       _mapData = mapData;
       _centerN = centerN;
-      _offset = Offset.zero;
+      // Reset offset when map loads, but only if controller is fresh or we want to force it?
+      // For now, let's just let controller keep its state or init state.
+      // _controller.updateTransform(_controller.scale, Offset.zero);
     });
   }
 
@@ -59,23 +104,22 @@ class _JapanMapsWidgetState extends State<JapanMapsWidget> {
       builder: (_, constraints) {
         return GestureDetector(
           onScaleStart: (d) {
-            _startScale = _scale;
-            _startOffset = _offset;
+            _startScale = _controller.scale;
+            _startOffset = _controller.offset;
             _startFocal = d.focalPoint;
           },
           onScaleUpdate: (d) {
-            setState(() {
-              _scale = (_startScale * d.scale).clamp(0.5, 10000.0);
-              _offset = _startOffset + (d.focalPoint - _startFocal);
-            });
+            final newScale = (_startScale * d.scale).clamp(0.5, 10000.0);
+            final newOffset = _startOffset + (d.focalPoint - _startFocal);
+            _controller.updateTransform(newScale, newOffset);
           },
           child: CustomPaint(
             size: Size.infinite,
             painter: _GeoMapPainter(
               polygons: mapData.polygons,
               centerN: centerN,
-              scale: _scale,
-              offset: _offset,
+              scale: _controller.scale,
+              offset: _controller.offset,
               canvasSize: Size(constraints.maxWidth, constraints.maxHeight),
             ),
           ),
@@ -86,7 +130,7 @@ class _JapanMapsWidgetState extends State<JapanMapsWidget> {
 }
 
 class _GeoMapPainter extends CustomPainter {
-  final List<List<LatLng>> polygons; // normalized (-1..1)
+  final List<MapPolygon> polygons; // normalized (-1..1)
   final LatLng centerN; // normalized (-1..1)
   final double scale;
   final Offset offset;
@@ -113,11 +157,11 @@ class _GeoMapPainter extends CustomPainter {
     final cy = size.height / 2 + offset.dy;
 
     for (final poly in polygons) {
-      if (poly.isEmpty) continue;
+      if (poly.points.isEmpty) continue;
 
       final path = Path();
-      for (int i = 0; i < poly.length; i++) {
-        final p = poly[i];
+      for (int i = 0; i < poly.points.length; i++) {
+        final p = poly.points[i];
 
         final dx = cx + (p.longitude - centerN.longitude) * totalScale;
         final dy = cy + (p.latitude - centerN.latitude) * totalScale;
