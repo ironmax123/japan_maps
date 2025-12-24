@@ -37,7 +37,6 @@ class _MyHomePageState extends State<MyHomePage> {
         title: const Text('Japan MapsDemo'),
       ),
       body: GeoMapWidget(
-        geoJsonPath: 'assets/map.geojson',
         center: LatLng(latitude: 35.6895, longitude: 139.6917),
       ),
     );

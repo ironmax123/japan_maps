@@ -6,12 +6,8 @@ import 'package:japan_maps/src/model/normalized_map.dart';
 
 class GeoMapWidget extends StatefulWidget {
   final LatLng center; // raw lat/lon
-  final String geoJsonPath;
-  const GeoMapWidget({
-    super.key,
-    required this.center,
-    required this.geoJsonPath,
-  });
+
+  const GeoMapWidget({super.key, required this.center});
 
   @override
   State<GeoMapWidget> createState() => _GeoMapWidgetState();
@@ -21,10 +17,10 @@ class _GeoMapWidgetState extends State<GeoMapWidget> {
   NormalizedMapData? _mapData;
   LatLng? _centerN;
 
-  double _scale = 3.0;
+  double _scale = 50.0;
   Offset _offset = Offset.zero;
 
-  double _startScale = 1.0;
+  double _startScale = 50.0;
   Offset _startOffset = Offset.zero;
   Offset _startFocal = Offset.zero;
 
@@ -35,7 +31,9 @@ class _GeoMapWidgetState extends State<GeoMapWidget> {
   }
 
   Future<void> _loadGeoJson() async {
-    final json = await rootBundle.loadString('assets/map.geojson');
+    final json = await rootBundle.loadString(
+      'packages/japan_maps/assets/map.geojson',
+    );
     final mapData = geoJsonToMercatorMap(json);
     final centerN = normalizeCenter(widget.center, mapData);
 
