@@ -76,6 +76,8 @@ class _MapColorWidget extends StatelessWidget {
       appBar: AppBar(title: const Text('Color Map')),
       body: JapanColorMapsWidget(
         center: LatLng(latitude: 35.6895, longitude: 139.6917),
+        backgroundColor: Color(0xff20b2aa),
+        otherCountryColor: Color(0xff556b2f),
         mapColor: Colors.greenAccent.withAlpha(128),
 
         /// optional
@@ -96,6 +98,8 @@ class _MapColorPrefectureWidget extends StatelessWidget {
       body: JapanColorMapsWidget(
         center: LatLng(latitude: 35.6895, longitude: 139.6917),
         mapColor: Colors.blueAccent.withAlpha(128),
+        backgroundColor: Colors.black,
+        otherCountryColor: Colors.grey,
 
         /// optional
         /// prefecture color
@@ -148,6 +152,9 @@ class _MapColorPrefectureWidget extends StatelessWidget {
           kagoshima: Colors.deepPurple.withAlpha(128),
           okinawa: Colors.deepOrange.withAlpha(128),
         ),
+        onPrefectureTap: (pref) {
+          print('Tapped: ${pref.key}');
+        },
 
         /// optional
         // initialZoomLevel: 500.0,
@@ -166,6 +173,11 @@ class _MapWidget extends StatelessWidget {
       appBar: AppBar(title: const Text('normal map')),
       body: JapanMapsWidget(
         center: LatLng(latitude: 35.6895, longitude: 139.6917),
+        backgroundColor: Color(0xff2f4f4f),
+        otherCountryColor: Color(0xff4b0082),
+        onPrefectureTap: (pref) {
+          print('Tapped: ${pref.key}');
+        },
 
         /// optional
         /// default is 50.0

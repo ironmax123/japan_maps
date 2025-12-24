@@ -1,20 +1,27 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:japan_maps/src/format/geo_map.dart';
-import 'package:japan_maps/src/model/lat_lng.dart';
-import 'package:flutter/services.dart';
-import 'package:japan_maps/src/model/normalized_map.dart';
 import 'package:japan_maps/src/map/map_controller.dart';
+import 'package:japan_maps/src/map/prefecture_polygon.dart';
+import 'package:japan_maps/src/model/lat_lng.dart';
+import 'package:japan_maps/src/model/normalized_map.dart';
 
 class JapanMapsWidget extends StatefulWidget {
   final LatLng center; // raw lat/lon
   final JapanMapsController? controller;
   final double initialZoomLevel;
+  final Color backgroundColor;
+  final Color otherCountryColor;
+  final ValueChanged<PrefecturePolygon>? onPrefectureTap;
 
   const JapanMapsWidget({
     super.key,
     required this.center,
+    required this.backgroundColor,
+    required this.otherCountryColor,
     this.controller,
     this.initialZoomLevel = 50.0,
+    this.onPrefectureTap,
   });
 
   @override
@@ -22,6 +29,7 @@ class JapanMapsWidget extends StatefulWidget {
 }
 
 class _JapanMapsWidgetState extends State<JapanMapsWidget> {
+  // ... (previous state variables)
   NormalizedMapData? _mapData;
   LatLng? _centerN;
 
@@ -41,10 +49,12 @@ class _JapanMapsWidgetState extends State<JapanMapsWidget> {
       _controller = JapanMapsController(zoomLevel: widget.initialZoomLevel);
       _isInternalController = true;
     }
+    _controller.updateTransform(widget.initialZoomLevel, _controller.offset);
     _controller.addListener(_onControllerChange);
     _loadGeoJson();
   }
 
+  // ... (dispose and other methods same as before)
   @override
   void didUpdateWidget(covariant JapanMapsWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -91,9 +101,6 @@ class _JapanMapsWidgetState extends State<JapanMapsWidget> {
     setState(() {
       _mapData = mapData;
       _centerN = centerN;
-      // Reset offset when map loads, but only if controller is fresh or we want to force it?
-      // For now, let's just let controller keep its state or init state.
-      // _controller.updateTransform(_controller.scale, Offset.zero);
     });
   }
 
@@ -108,25 +115,64 @@ class _JapanMapsWidgetState extends State<JapanMapsWidget> {
 
     return LayoutBuilder(
       builder: (_, constraints) {
-        return GestureDetector(
-          onScaleStart: (d) {
-            _startScale = _controller.scale;
-            _startOffset = _controller.offset;
-            _startFocal = d.focalPoint;
-          },
-          onScaleUpdate: (d) {
-            final newScale = (_startScale * d.scale).clamp(0.5, 10000.0);
-            final newOffset = _startOffset + (d.focalPoint - _startFocal);
-            _controller.updateTransform(newScale, newOffset);
-          },
-          child: CustomPaint(
-            size: Size.infinite,
-            painter: _GeoMapPainter(
-              polygons: mapData.polygons,
-              centerN: centerN,
-              scale: _controller.scale,
-              offset: _controller.offset,
-              canvasSize: Size(constraints.maxWidth, constraints.maxHeight),
+        return Container(
+          color: widget.backgroundColor,
+          child: GestureDetector(
+            onScaleStart: (d) {
+              _startScale = _controller.scale;
+              _startOffset = _controller.offset;
+              _startFocal = d.focalPoint;
+            },
+            onScaleUpdate: (d) {
+              final newScale = (_startScale * d.scale).clamp(0.5, 10000.0);
+              final newOffset = _startOffset + (d.focalPoint - _startFocal);
+              _controller.updateTransform(newScale, newOffset);
+            },
+            onTapUp: (d) {
+              if (widget.onPrefectureTap == null) return;
+
+              final size = Size(constraints.maxWidth, constraints.maxHeight);
+              final cx = size.width / 2 + _controller.offset.dx;
+              final cy = size.height / 2 + _controller.offset.dy;
+              final baseScale = size.shortestSide / 2;
+              final totalScale = baseScale * _controller.scale;
+
+              final dx = d.localPosition.dx;
+              final dy = d.localPosition.dy;
+
+              // Convert screen point to normalized point
+              // dx = cx + (lon - centerN.lon) * totalScale
+              // => lon = (dx - cx) / totalScale + centerN.lon
+              final lon = (dx - cx) / totalScale + centerN.longitude;
+              final lat = (dy - cy) / totalScale + centerN.latitude;
+
+              final tapPoint = LatLng(latitude: lat, longitude: lon);
+
+              for (final poly in mapData.polygons) {
+                if (poly.properties['nam_ja'] == null) continue;
+
+                // Using isPointInPolygon from prefecture_polygon.dart
+                if (isPointInPolygon(tapPoint, poly.points)) {
+                  widget.onPrefectureTap!(
+                    PrefecturePolygon(
+                      key: poly.properties['nam_ja'],
+                      polygon: poly.points,
+                    ),
+                  );
+                  break;
+                }
+              }
+            },
+            child: CustomPaint(
+              size: Size.infinite,
+              painter: _GeoMapPainter(
+                polygons: mapData.polygons,
+                centerN: centerN,
+                scale: _controller.scale,
+                offset: _controller.offset,
+                canvasSize: Size(constraints.maxWidth, constraints.maxHeight),
+                color: widget.otherCountryColor,
+              ),
             ),
           ),
         );
@@ -141,6 +187,7 @@ class _GeoMapPainter extends CustomPainter {
   final double scale;
   final Offset offset;
   final Size canvasSize;
+  final Color color;
 
   _GeoMapPainter({
     required this.polygons,
@@ -148,13 +195,19 @@ class _GeoMapPainter extends CustomPainter {
     required this.scale,
     required this.offset,
     required this.canvasSize,
+    required this.color,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+    final fillPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = color.withAlpha(64);
+
+    final strokePaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+      ..strokeWidth = 1.0
+      ..color = color;
 
     final baseScale = size.shortestSide / 2;
     final totalScale = baseScale * scale;
@@ -179,7 +232,8 @@ class _GeoMapPainter extends CustomPainter {
         }
       }
       path.close();
-      canvas.drawPath(path, paint);
+      canvas.drawPath(path, fillPaint);
+      canvas.drawPath(path, strokePaint);
     }
   }
 

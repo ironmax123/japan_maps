@@ -4,18 +4,26 @@ import 'package:japan_maps/japan_maps.dart';
 import 'package:japan_maps/src/format/geo_map.dart';
 import 'package:japan_maps/src/model/normalized_map.dart';
 
+import 'package:japan_maps/src/map/prefecture_polygon.dart';
+
 class JapanColorMapsWidget extends StatefulWidget {
   final LatLng center; // raw lat/lon
   final double initialZoomLevel;
   final Prefecture? prefecture;
   final Color mapColor;
+  final Color backgroundColor;
+  final Color otherCountryColor;
+  final ValueChanged<PrefecturePolygon>? onPrefectureTap;
 
   const JapanColorMapsWidget({
     super.key,
     required this.center,
     required this.mapColor,
+    required this.backgroundColor,
+    required this.otherCountryColor,
     this.initialZoomLevel = 50.0,
     this.prefecture,
+    this.onPrefectureTap,
   });
 
   @override
@@ -69,7 +77,13 @@ class _JapanColorMapsWidgetState extends State<JapanColorMapsWidget> {
 
     return Stack(
       children: [
-        JapanMapsWidget(center: widget.center, controller: _controller),
+        JapanMapsWidget(
+          center: widget.center,
+          controller: _controller,
+          backgroundColor: widget.backgroundColor,
+          otherCountryColor: widget.otherCountryColor,
+          onPrefectureTap: widget.onPrefectureTap,
+        ),
         IgnorePointer(
           child: CustomPaint(
             size: Size.infinite,
