@@ -137,7 +137,7 @@ class _JapanColorPainter extends CustomPainter {
       if (poly.points.isEmpty) continue;
 
       final id = poly.properties['id'];
-      Color color = mapColor;
+      Color color = mapColor.withAlpha(64);
 
       if (prefecture != null && id is int) {
         color = _getColor(prefecture!, id) ?? mapColor;
