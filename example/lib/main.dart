@@ -83,6 +83,12 @@ class _MapColorWidget extends StatelessWidget {
         /// optional
         // initialZoomLevel: 500.0,
         /// default is 50.0
+
+        /// ontap prefecture
+        /// default is null
+        onPrefectureTap: (pref) {
+          print('Tapped: ${pref.key}');
+        },
       ),
     );
   }
