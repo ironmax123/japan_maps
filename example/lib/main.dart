@@ -78,7 +78,7 @@ class _MapColorWidget extends StatelessWidget {
         center: LatLng(latitude: 35.6895, longitude: 139.6917),
         backgroundColor: Color(0xff20b2aa),
         otherCountryColor: Color(0xff556b2f),
-        mapColor: Colors.greenAccent.withAlpha(128),
+        mapColor: Colors.greenAccent,
 
         /// optional
         // initialZoomLevel: 500.0,
