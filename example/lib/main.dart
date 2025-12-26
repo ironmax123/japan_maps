@@ -76,8 +76,8 @@ class _MapColorWidget extends StatelessWidget {
       appBar: AppBar(title: const Text('Color Map')),
       body: JapanColorMapsWidget(
         center: LatLng(latitude: 35.6895, longitude: 139.6917),
-        backgroundColor: Color(0xff20b2aa),
-        otherCountryColor: Color(0xff556b2f),
+        backgroundColor: Colors.indigo,
+        otherCountryColor: Colors.grey,
         mapColor: Colors.greenAccent,
 
         /// optional
