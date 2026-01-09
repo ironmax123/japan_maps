@@ -13,6 +13,7 @@ class JapanMapsWidget extends StatefulWidget {
   final Color backgroundColor;
   final Color otherCountryColor;
   final ValueChanged<PrefecturePolygon>? onPrefectureTap;
+  final Color? onTapedColor;
 
   const JapanMapsWidget({
     super.key,
@@ -22,6 +23,7 @@ class JapanMapsWidget extends StatefulWidget {
     this.controller,
     this.initialZoomLevel = 50.0,
     this.onPrefectureTap,
+    this.onTapedColor,
   });
 
   @override
@@ -39,6 +41,8 @@ class _JapanMapsWidgetState extends State<JapanMapsWidget> {
   double _startScale = 1.0;
   Offset _startOffset = Offset.zero;
   Offset _startFocal = Offset.zero;
+
+  String? _tappedPrefectureName;
 
   @override
   void initState() {
@@ -129,8 +133,6 @@ class _JapanMapsWidgetState extends State<JapanMapsWidget> {
               _controller.updateTransform(newScale, newOffset);
             },
             onTapUp: (d) {
-              if (widget.onPrefectureTap == null) return;
-
               final size = Size(constraints.maxWidth, constraints.maxHeight);
               final cx = size.width / 2 + _controller.offset.dx;
               final cy = size.height / 2 + _controller.offset.dy;
@@ -153,7 +155,10 @@ class _JapanMapsWidgetState extends State<JapanMapsWidget> {
 
                 // Using isPointInPolygon from prefecture_polygon.dart
                 if (isPointInPolygon(tapPoint, poly.points)) {
-                  widget.onPrefectureTap!(
+                  setState(() {
+                    _tappedPrefectureName = poly.properties['nam_ja'];
+                  });
+                  widget.onPrefectureTap?.call(
                     PrefecturePolygon(
                       key: poly.properties['nam_ja'],
                       polygon: poly.points,
@@ -172,6 +177,8 @@ class _JapanMapsWidgetState extends State<JapanMapsWidget> {
                 offset: _controller.offset,
                 canvasSize: Size(constraints.maxWidth, constraints.maxHeight),
                 color: widget.otherCountryColor,
+                tappedPrefectureName: _tappedPrefectureName,
+                onTapedColor: widget.onTapedColor,
               ),
             ),
           ),
@@ -188,6 +195,8 @@ class _GeoMapPainter extends CustomPainter {
   final Offset offset;
   final Size canvasSize;
   final Color color;
+  final String? tappedPrefectureName;
+  final Color? onTapedColor;
 
   _GeoMapPainter({
     required this.polygons,
@@ -196,6 +205,8 @@ class _GeoMapPainter extends CustomPainter {
     required this.offset,
     required this.canvasSize,
     required this.color,
+    this.tappedPrefectureName,
+    this.onTapedColor,
   });
 
   @override
@@ -232,7 +243,17 @@ class _GeoMapPainter extends CustomPainter {
         }
       }
       path.close();
-      canvas.drawPath(path, fillPaint);
+
+      if (onTapedColor != null &&
+          tappedPrefectureName != null &&
+          poly.properties['nam_ja'] == tappedPrefectureName) {
+        final tappedPaint = Paint()
+          ..style = PaintingStyle.fill
+          ..color = onTapedColor!;
+        canvas.drawPath(path, tappedPaint);
+      } else {
+        canvas.drawPath(path, fillPaint);
+      }
       canvas.drawPath(path, strokePaint);
     }
   }
@@ -242,6 +263,8 @@ class _GeoMapPainter extends CustomPainter {
     return old.scale != scale ||
         old.offset != offset ||
         old.centerN != centerN ||
-        old.polygons != polygons;
+        old.polygons != polygons ||
+        old.tappedPrefectureName != tappedPrefectureName ||
+        old.onTapedColor != onTapedColor;
   }
 }

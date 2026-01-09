@@ -14,6 +14,7 @@ class JapanColorMapsWidget extends StatefulWidget {
   final Color backgroundColor;
   final Color otherCountryColor;
   final ValueChanged<PrefecturePolygon>? onPrefectureTap;
+  final Color? onTapedColor;
 
   const JapanColorMapsWidget({
     super.key,
@@ -24,6 +25,7 @@ class JapanColorMapsWidget extends StatefulWidget {
     this.initialZoomLevel = 50.0,
     this.prefecture,
     this.onPrefectureTap,
+    this.onTapedColor,
   });
 
   @override
@@ -34,6 +36,7 @@ class _JapanColorMapsWidgetState extends State<JapanColorMapsWidget> {
   late JapanMapsController _controller;
   NormalizedMapData? _mapData;
   LatLng? _centerN;
+  String? _tappedPrefectureName;
 
   @override
   void initState() {
@@ -82,7 +85,12 @@ class _JapanColorMapsWidgetState extends State<JapanColorMapsWidget> {
           controller: _controller,
           backgroundColor: widget.backgroundColor,
           otherCountryColor: widget.otherCountryColor,
-          onPrefectureTap: widget.onPrefectureTap,
+          onPrefectureTap: (pref) {
+            setState(() {
+              _tappedPrefectureName = pref.key;
+            });
+            widget.onPrefectureTap?.call(pref);
+          },
         ),
         IgnorePointer(
           child: CustomPaint(
@@ -94,6 +102,8 @@ class _JapanColorMapsWidgetState extends State<JapanColorMapsWidget> {
               scale: _controller.scale,
               offset: _controller.offset,
               prefecture: widget.prefecture,
+              tappedPrefectureName: _tappedPrefectureName,
+              onTapedColor: widget.onTapedColor,
             ),
           ),
         ),
@@ -110,6 +120,8 @@ class _JapanColorPainter extends CustomPainter {
   final Color mapColor;
 
   final Prefecture? prefecture;
+  final String? tappedPrefectureName;
+  final Color? onTapedColor;
 
   _JapanColorPainter({
     required this.polygons,
@@ -118,6 +130,8 @@ class _JapanColorPainter extends CustomPainter {
     required this.offset,
     required this.mapColor,
     this.prefecture,
+    this.tappedPrefectureName,
+    this.onTapedColor,
   });
 
   @override
@@ -141,6 +155,12 @@ class _JapanColorPainter extends CustomPainter {
 
       if (prefecture != null && id is int) {
         color = _getColor(prefecture!, id) ?? mapColor;
+      }
+
+      if (onTapedColor != null &&
+          tappedPrefectureName != null &&
+          poly.properties['nam_ja'] == tappedPrefectureName) {
+        color = onTapedColor!;
       }
 
       basePaint.color = color;
@@ -271,7 +291,8 @@ class _JapanColorPainter extends CustomPainter {
         old.centerN != centerN ||
         old.polygons != polygons ||
         old.mapColor != mapColor ||
-        old.prefecture !=
-            prefecture; // Assuming Prefecture checks equality correctly or re-creates
+        old.prefecture != prefecture ||
+        old.tappedPrefectureName != tappedPrefectureName ||
+        old.onTapedColor != onTapedColor;
   }
 }
