@@ -95,7 +95,7 @@ class _JapanMapsWidgetState extends State<JapanMapsWidget> {
 
   Future<void> _loadGeoJson() async {
     final json = await rootBundle.loadString(
-      'packages/japan_maps/assets/map.geojson',
+      'packages/japan_maps/assets/map2.geojson',
     );
     final mapData = geoJsonToMercatorMap(json);
     final centerN = normalizeCenter(widget.center, mapData);
@@ -151,16 +151,16 @@ class _JapanMapsWidgetState extends State<JapanMapsWidget> {
               final tapPoint = LatLng(latitude: lat, longitude: lon);
 
               for (final poly in mapData.polygons) {
-                if (poly.properties['nam_ja'] == null) continue;
+                if (poly.properties['name_local'] == null) continue;
 
                 // Using isPointInPolygon from prefecture_polygon.dart
                 if (isPointInPolygon(tapPoint, poly.points)) {
                   setState(() {
-                    _tappedPrefectureName = poly.properties['nam_ja'];
+                    _tappedPrefectureName = poly.properties['name_local'];
                   });
                   widget.onPrefectureTap?.call(
                     PrefecturePolygon(
-                      key: poly.properties['nam_ja'],
+                      key: poly.properties['name_local'],
                       polygon: poly.points,
                     ),
                   );
@@ -246,7 +246,7 @@ class _GeoMapPainter extends CustomPainter {
 
       if (onTapedColor != null &&
           tappedPrefectureName != null &&
-          poly.properties['nam_ja'] == tappedPrefectureName) {
+          poly.properties['name_local'] == tappedPrefectureName) {
         final tappedPaint = Paint()
           ..style = PaintingStyle.fill
           ..color = onTapedColor!;

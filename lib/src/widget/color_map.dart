@@ -59,7 +59,7 @@ class _JapanColorMapsWidgetState extends State<JapanColorMapsWidget> {
 
   Future<void> _loadGeoJson() async {
     final json = await rootBundle.loadString(
-      'packages/japan_maps/assets/map.geojson',
+      'packages/japan_maps/assets/map2.geojson',
     );
     final mapData = geoJsonToMercatorMap(json);
     final centerN = normalizeCenter(widget.center, mapData);
@@ -145,21 +145,28 @@ class _JapanColorPainter extends CustomPainter {
     final cy = size.height / 2 + offset.dy;
 
     for (final poly in polygons) {
-      // Check if it's Japan based on the existence of 'nam_ja' property
-      if (poly.properties['nam_ja'] == null) continue;
+      // Check if it's Japan based on the existence of 'name_local' property
+      if (poly.properties['name_local'] == null) continue;
 
       if (poly.points.isEmpty) continue;
 
-      final id = poly.properties['id'];
+      int? id;
+      final isoCode = poly.properties['iso_3166_2'];
+      if (isoCode is String && isoCode.startsWith('JP-')) {
+        id = int.tryParse(isoCode.substring(3));
+      } else if (poly.properties['id'] is int) {
+        id = poly.properties['id'];
+      }
+
       Color color = mapColor.withAlpha(70);
 
-      if (prefecture != null && id is int) {
+      if (prefecture != null && id != null) {
         color = _getColor(prefecture!, id) ?? mapColor;
       }
 
       if (onTapedColor != null &&
           tappedPrefectureName != null &&
-          poly.properties['nam_ja'] == tappedPrefectureName) {
+          poly.properties['name_local'] == tappedPrefectureName) {
         color = onTapedColor!;
       }
 
