@@ -15,7 +15,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  japan_maps: ^0.0.1
+  japan_maps: ^1.0.1
 ```
 
 Or run this command in your terminal:
@@ -107,7 +107,7 @@ class MyColorMapPage extends StatelessWidget {
 
 ```yaml
 dependencies:
-  japan_maps: ^0.0.1
+  japan_maps: ^1.0.1
 ```
 
 または、ターミナルで以下のコマンドを実行してください：
