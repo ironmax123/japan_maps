@@ -95,7 +95,7 @@ class _JapanMapsWidgetState extends State<JapanMapsWidget> {
 
   Future<void> _loadGeoJson() async {
     final json = await rootBundle.loadString(
-      'packages/japan_maps/assets/map2.geojson',
+      'packages/japan_maps/assets/map.geojson',
     );
     final mapData = geoJsonToMercatorMap(json);
     final centerN = normalizeCenter(widget.center, mapData);

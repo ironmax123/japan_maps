@@ -179,3 +179,7 @@ class MyColorMapPage extends StatelessWidget {
   }
 }
 ```
+
+## Acknowledgements
+
+The boundary data used in this package is sourced from [Natural Earth](https://www.naturalearthdata.com/), which is in the public domain.
